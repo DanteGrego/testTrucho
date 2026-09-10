@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuentas</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #111827;
+      --surface-subtle: #1f2937;
+      --surface-hover: #2d3748;
+      --border: #374151;
+      --border-subtle: #1f2937;
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --primary: #f3f4f6;
+      --primary-text: #090d16;
+      --primary-hover: #e5e7eb;
+      --positive: #4ade80;
+      --positive-bg: rgba(74, 222, 128, 0.1);
+      --positive-border: rgba(74, 222, 128, 0.25);
+      --negative: #f87171;
+      --negative-bg: rgba(248, 113, 113, 0.1);
+      --negative-border: rgba(248, 113, 113, 0.25);
+      --radius: 10px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px 40px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .app-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .user-btn {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .user-btn:hover {
+      background: var(--surface-hover);
+    }
+
+    .balances-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .balance-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .balance-card span {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .balance-card strong {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .balance-card.pos strong { color: var(--positive); }
+    .balance-card.neg strong { color: var(--negative); }
+
+    .tabs {
+      display: flex;
+      background: var(--surface-subtle);
+      padding: 3px;
+      border-radius: var(--radius);
+      gap: 4px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-row > * {
+      flex: 1;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 0.875rem;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--text-muted);
+    }
+
+    button.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button.btn:active {
+      opacity: 0.8;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-subtle {
+      background: var(--surface-subtle);
+      color: var(--text);
+      border: 1px solid var(--border) !important;
+    }
+
+    .btn-subtle:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-text-danger {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 4px 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .btn-text-danger:hover {
+      color: var(--negative);
+      background: var(--negative-bg);
+    }
+
+    .btn-sm {
+      padding: 5px 9px;
+      font-size: 0.75rem;
+    }
+
+    .friend-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .friend-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .friend-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge.pos {
+      background: var(--positive-bg);
+      color: var(--positive);
+      border: 1px solid var(--positive-border);
+    }
+
+    .badge.neg {
+      background: var(--negative-bg);
+      color: var(--negative);
+      border: 1px solid var(--negative-border);
+    }
+
+    .badge.neutral {
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .debt-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      gap: 10px;
+    }
+
+    .debt-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .debt-item.settled {
+      opacity: 0.45;
+    }
+
+    .debt-desc {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .debt-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .debt-amount {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .debt-amount .val {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .group-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      background: var(--surface);
+    }
+
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .member-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .member-tag {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .checkbox-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      background: var(--surface-subtle);
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid var(--border);
+    }
+
+    .checkbox-label:hover {
+      background: var(--surface-hover);
+    }
+
+    .checkbox-label input {
+      width: auto;
+      margin: 0;
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 18px 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .tip-box {
+      background: var(--surface-subtle);
+      border: 1px dashed var(--border);
+      padding: 10px 12px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    dialog {
+      position: fixed;
+      inset: 0;
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: var(--surface);
+      color: var(--text);
+      max-width: 440px;
+      width: 90%;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(2px);
+    }
+
+    footer {
+      margin-top: 32px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .footer-links button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.72rem;
+      text-decoration: underline;
+      margin-left: 8px;
+    }
+
+    .footer-links button:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 500px) {
+      .balances-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-top">
+      <h1 class="app-title">Cuentas</h1>
+      <button class="user-btn" onclick="editUserName()" title="Cambiar nombre">
+        <span>Usuario:</span> <strong id="userNameDisplay">Yo</strong>
+      </button>
+    </div>
+
+    <div class="balances-grid">
+      <div class="balance-card pos">
+        <span>Me deben</span>
+        <strong id="totalOwedToMe">$0</strong>
+      </div>
+      <div class="balance-card neg">
+        <span>Le debo</span>
+        <strong id="totalIOwe">$0</strong>
+      </div>
+      <div class="balance-card" id="netBalanceCard">
+        <span>Balance</span>
+        <strong id="totalNet">$0</strong>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('friends')">Amigos</button>
+    <button class="tab-btn" onclick="switchTab('debts')">Deudas</button>
+    <button class="tab-btn" onclick="switchTab('groups')">Grupos</button>
+  </div>
+
+  <!-- TAB 1: AMIGOS -->
+  <section id="tab-friends">
+    <div class="card">
+      <h2 class="card-title">Agregar amigo</h2>
+      <form onsubmit="addFriend(event)" class="form-row">
+        <input type="text" id="newFriendName" required autocomplete="off" />
+        <button type="submit" class="btn btn-primary" style="flex: 0 0 auto;">Agregar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Lista de amigos</h2>
+      <div id="friendsList"></div>
+    </div>
+  </section>
+
+  <!-- TAB 2: DEUDAS DIRECTAS (SOLO ENTRE YO Y UN AMIGO) -->
+  <section id="tab-debts" style="display: none;">
+    <div class="card">
+      <h2 class="card-title">Cargar deuda</h2>
+      <div id="noFriendsTipDebts" class="tip-box" style="display: none;">
+        Agrega amigos en la pestaña "Amigos" para cargar deudas con ellos.
+      </div>
+      <form id="directDebtForm" onsubmit="addDirectDebt(event)">
+        <div class="form-row form-group">
+          <div>
+            <label>Amigo</label>
+            <select id="debtFriendSelect" required></select>
+          </div>
+          <div>
+            <label>Condicion</label>
+            <select id="debtDirection" required>
+              <option value="borrowed">Le debo</option>
+              <option value="lent">Me debe</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row form-group">
+          <div>
+            <label>Monto ($)</label>
+            <input type="number" id="debtAmount" min="0.01" step="any" required />
+          </div>
+          <div>
+            <label>Concepto</label>
+            <input type="text" id="debtConcept" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar deuda</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Historial de deudas</span>
+        <label style="font-size: 0.75rem; font-weight: normal; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+          <input type="checkbox" id="filterHideSettled" onchange="renderDebts()" style="width: auto;" />
+          Ocultar saldadas
+        </label>
+      </div>
+      <div id="debtsList"></div>
+    </div>
+  </section>
+
+  <!-- TAB 3: GASTOS GRUPALES -->
+  <section id="tab-groups" style="display: none;">
+    <div class="card">
+      <h2 class="card-title">Nuevo grupo</h2>
+      <div id="noFriendsTipGroups" class="tip-box" style="display: none;">
+        Necesitas amigos cargados para armar grupos.
+      </div>
+      <form id="createGroupForm" onsubmit="createGroup(event)">
+        <div class="form-group">
+          <label>Nombre del grupo</label>
+          <input type="text" id="groupName" required />
+        </div>
+        <div class="form-group">
+          <label>Integrantes</label>
+          <div id="groupMembersSelection" class="checkbox-list"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Crear grupo</button>
+      </form>
+    </div>
+
+    <div id="groupsList"></div>
+  </section>
+
+  <!-- Modal gasto grupal -->
+  <dialog id="expenseModal">
+    <form method="dialog" onsubmit="saveGroupExpense(event)">
+      <h2 style="font-size: 1rem; margin-bottom: 12px;" id="modalGroupTitle">Gasto grupal</h2>
+      <input type="hidden" id="modalGroupId" />
+      
+      <div class="form-group">
+        <label>Quien pago</label>
+        <select id="modalExpensePayer" required></select>
+      </div>
+
+      <div class="form-row form-group">
+        <div>
+          <label>Monto total ($)</label>
+          <input type="number" id="modalExpenseAmount" min="0.01" step="any" required oninput="updateSplitPreview()" />
+        </div>
+        <div>
+          <label>Concepto</label>
+          <input type="text" id="modalExpenseConcept" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Participantes</label>
+        <div id="modalMembersCheckboxes" class="checkbox-list" onchange="updateSplitPreview()"></div>
+      </div>
+
+      <div id="splitPreviewText" style="font-size: 0.78rem; color: var(--text-muted); background: var(--surface-subtle); padding: 8px 10px; border-radius: 6px; margin-bottom: 14px; border: 1px solid var(--border);">
+        Indica participantes y monto para calcular.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-subtle" onclick="document.getElementById('expenseModal').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar gasto</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    <div>Cuentas • Almacenado local</div>
+    <div class="footer-links">
+      <button onclick="loadSampleData()">Cargar ejemplo</button>
+      <button onclick="exportData()">Exportar</button>
+      <button onclick="importData()">Importar</button>
+      <button onclick="resetData()">Reiniciar</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const STORAGE_KEY = 'cuentas_app_data_v3';
+
+  let appState = {
+    user: { id: 'user_me', name: 'Yo' },
+    friends: [],
+    debts: [], // Solo guarda deudas entre user_me y un amigo
+    groups: []
+  };
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        appState = JSON.parse(saved);
+        if (!appState.user) appState.user = { id: 'user_me', name: 'Yo' };
+        if (!appState.friends) appState.friends = [];
+        if (!appState.debts) appState.debts = [];
+        if (!appState.groups) appState.groups = [];
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function formatMoney(amount) {
+    return '$' + Number(amount).toLocaleString('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function getFriendName(id) {
+    const friend = appState.friends.find(f => f.id === id);
+    return friend ? friend.name : 'Desconocido';
+  }
+
+  // Calcula balance neto entre el usuario principal y un amigo específico
+  // Positivo: el amigo le debe al usuario
+  // Negativo: el usuario le debe al amigo
+  function getNetBalanceWithFriend(friendId) {
+    let balance = 0;
+    appState.debts.forEach(d => {
+      if (d.settled) return;
+      if (d.friendId === friendId) {
+        if (d.direction === 'lent') {
+          balance += d.amount; // Amigo me debe
+        } else if (d.direction === 'borrowed') {
+          balance -= d.amount; // Le debo al amigo
+        }
+      }
+    });
+    return balance;
+  }
+
+  function calculateOverview() {
+    let totalOwedToMe = 0;
+    let totalIOwe = 0;
+
+    appState.friends.forEach(friend => {
+      const net = getNetBalanceWithFriend(friend.id);
+      if (net > 0) {
+        totalOwedToMe += net;
+      } else if (net < 0) {
+        totalIOwe += Math.abs(net);
+      }
+    });
+
+    const netTotal = totalOwedToMe - totalIOwe;
+
+    document.getElementById('totalOwedToMe').textContent = formatMoney(totalOwedToMe);
+    document.getElementById('totalIOwe').textContent = formatMoney(totalIOwe);
+
+    const netEl = document.getElementById('totalNet');
+    netEl.textContent = (netTotal > 0 ? '+' : '') + formatMoney(netTotal);
+
+    const netCard = document.getElementById('netBalanceCard');
+    netCard.className = 'balance-card ' + (netTotal > 0 ? 'pos' : netTotal < 0 ? 'neg' : '');
+  }
+
+  function editUserName() {
+    const current = appState.user.name;
+    const newName = prompt('Nombre de usuario:', current);
+    if (newName && newName.trim() && newName.trim() !== current) {
+      appState.user.name = newName.trim();
+      saveState();
+      renderAll();
+    }
+  }
+
+  /* GESTION DE AMIGOS */
+  function addFriend(e) {
+    e.preventDefault();
+    const input = document.getElementById('newFriendName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    const exists = appState.friends.some(f => f.name.toLowerCase() === name.toLowerCase()) ||
+                   appState.user.name.toLowerCase() === name.toLowerCase();
+    if (exists) {
+      alert('Ya existe alguien con ese nombre.');
+      return;
+    }
+
+    appState.friends.push({
+      id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: name
+    });
+
+    saveState();
+    input.value = '';
+    renderAll();
+  }
+
+  function deleteFriend(id) {
+    const friend = appState.friends.find(f => f.id === id);
+    if (!friend) return;
+
+    const net = getNetBalanceWithFriend(id);
+    if (Math.abs(net) > 0.01) {
+      if (!confirm(`"${friend.name}" tiene saldo pendiente de ${formatMoney(Math.abs(net))}. Eliminar amigo y sus deudas?`)) return;
+    } else {
+      if (!confirm(`Eliminar a "${friend.name}"?`)) return;
+    }
+
+    appState.debts = appState.debts.filter(d => d.friendId !== id);
+    appState.groups.forEach(g => {
+      g.memberIds = g.memberIds.filter(mId => mId !== id);
+    });
+    appState.friends = appState.friends.filter(f => f.id !== id);
+
+    saveState();
+    renderAll();
+  }
+
+  function settleBalanceWith(friendId) {
+    const friend = appState.friends.find(f => f.id === friendId);
+    if (!friend) return;
+    const net = getNetBalanceWithFriend(friendId);
+    if (Math.abs(net) <= 0.01) {
+      alert('Sin saldo pendiente.');
+      return;
+    }
+
+    const msg = net > 0 
+      ? `Marcar que ${friend.name} pago los ${formatMoney(net)} adeudados?`
+      : `Marcar que pagaste a ${friend.name} los ${formatMoney(Math.abs(net))} adeudados?`;
+
+    if (confirm(msg)) {
+      appState.debts.forEach(d => {
+        if (d.friendId === friendId) {
+          d.settled = true;
+        }
+      });
+      saveState();
+      renderAll();
+    }
+  }
+
+  function quickDebt(friendId) {
+    switchTab('debts');
+    document.getElementById('debtFriendSelect').value = friendId;
+    document.getElementById('debtAmount').focus();
+  }
+
+  function renderFriendsList() {
+    const listEl = document.getElementById('friendsList');
+    if (appState.friends.length === 0) {
+      listEl.innerHTML = '<div class="empty-msg">No hay amigos cargados. Agrega uno arriba.</div>';
+      return;
+    }
+
+    let html = '';
+    appState.friends.forEach(f => {
+      const net = getNetBalanceWithFriend(f.id);
+      let badgeHtml = '';
+      let settleBtn = '';
+
+      if (net > 0) {
+        badgeHtml = `<span class="badge pos">Me debe ${formatMoney(net)}</span>`;
+        settleBtn = `<button class="btn btn-subtle btn-sm" onclick="settleBalanceWith('${f.id}')">Saldar</button>`;
+      } else if (net < 0) {
+        badgeHtml = `<span class="badge neg">Le debo ${formatMoney(Math.abs(net))}</span>`;
+        settleBtn = `<button class="btn btn-subtle btn-sm" onclick="settleBalanceWith('${f.id}')">Saldar</button>`;
+      } else {
+        badgeHtml = `<span class="badge neutral">$0</span>`;
+      }
+
+      html += `
+        <div class="friend-item">
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">${f.name}</div>
+            <div style="margin-top: 2px;">${badgeHtml}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="btn btn-subtle btn-sm" onclick="quickDebt('${f.id}')">+ Deuda</button>
+            ${settleBtn}
+            <button class="btn-text-danger" onclick="deleteFriend('${f.id}')" title="Eliminar">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+
+    listEl.innerHTML = html;
+  }
+
+  /* DEUDAS DIRECTAS (EXCLUSIVAMENTE ENTRE YO Y UN AMIGO) */
+  function populateFriendSelect() {
+    const select = document.getElementById('debtFriendSelect');
+    const tipEl = document.getElementById('noFriendsTipDebts');
+    const prevVal = select.value;
+
+    select.innerHTML = '';
+    if (appState.friends.length === 0) {
+      tipEl.style.display = 'block';
+      return;
+    }
+    tipEl.style.display = 'none';
+
+    appState.friends.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      select.appendChild(opt);
+    });
+
+    if (prevVal && appState.friends.some(f => f.id === prevVal)) {
+      select.value = prevVal;
+    }
+  }
+
+  function addDirectDebt(e) {
+    e.preventDefault();
+    const friendId = document.getElementById('debtFriendSelect').value;
+    const direction = document.getElementById('debtDirection').value; // 'lent' (amigo me debe) o 'borrowed' (yo le debo)
+    const amount = parseFloat(document.getElementById('debtAmount').value);
+    const concept = document.getElementById('debtConcept').value.trim();
+
+    if (!friendId) {
+      alert('Selecciona un amigo.');
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      alert('Monto invalido.');
+      return;
+    }
+
+    appState.debts.unshift({
+      id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      friendId: friendId,
+      direction: direction,
+      amount: amount,
+      concept: concept || 'Deuda',
+      date: new Date().toLocaleDateString('es-AR'),
+      settled: false,
+      groupId: null
+    });
+
+    saveState();
+    document.getElementById('debtAmount').value = '';
+    document.getElementById('debtConcept').value = '';
+    renderAll();
+  }
+
+  function toggleDebtSettled(debtId) {
+    const debt = appState.debts.find(d => d.id === debtId);
+    if (!debt) return;
+    debt.settled = !debt.settled;
+    saveState();
+    renderAll();
+  }
+
+  function deleteDebt(debtId) {
+    if (!confirm('Eliminar registro de deuda?')) return;
+    appState.debts = appState.debts.filter(d => d.id !== debtId);
+    saveState();
+    renderAll();
+  }
+
+  function renderDebts() {
+    const listEl = document.getElementById('debtsList');
+    const hideSettled = document.getElementById('filterHideSettled').checked;
+
+    const filtered = hideSettled 
+      ? appState.debts.filter(d => !d.settled) 
+      : appState.debts;
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<div class="empty-msg">No hay deudas cargadas.</div>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(d => {
+      const friendName = getFriendName(d.friendId);
+      const isSettled = d.settled;
+      const relationText = d.direction === 'lent' 
+        ? `${friendName} me debe` 
+        : `Le debo a ${friendName}`;
+
+      html += `
+        <div class="debt-item ${isSettled ? 'settled' : ''}">
+          <div>
+            <div class="debt-desc">
+              ${d.concept}
+              ${d.groupId ? '<span class="badge neutral" style="font-size: 0.68rem; margin-left: 4px;">Grupo</span>' : ''}
+              ${isSettled ? '<span class="badge neutral" style="font-size: 0.68rem; margin-left: 4px;">Saldada</span>' : ''}
+            </div>
+            <div class="debt-sub">
+              ${relationText} • ${d.date}
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div class="debt-amount">
+              <div class="val">${formatMoney(d.amount)}</div>
+            </div>
+            <button class="btn btn-subtle btn-sm" onclick="toggleDebtSettled('${d.id}')">
+              ${isSettled ? 'Deshacer' : 'Saldar'}
+            </button>
+            <button class="btn-text-danger" onclick="deleteDebt('${d.id}')" title="Eliminar">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+
+    listEl.innerHTML = html;
+  }
+
+  /* GASTOS GRUPALES (SOLO AFECTA CUENTAS ENTRE YO Y AMIGOS) */
+  function renderGroupMemberSelection() {
+    const container = document.getElementById('groupMembersSelection');
+    const tipEl = document.getElementById('noFriendsTipGroups');
+
+    if (appState.friends.length === 0) {
+      tipEl.style.display = 'block';
+      container.innerHTML = '';
+      return;
+    }
+    tipEl.style.display = 'none';
+
+    let html = `
+      <label class="checkbox-label" style="opacity: 0.8;">
+        <input type="checkbox" checked disabled />
+        ${appState.user.name} (Tu)
+      </label>
+    `;
+
+    appState.friends.forEach(f => {
+      html += `
+        <label class="checkbox-label">
+          <input type="checkbox" name="groupFriendMember" value="${f.id}" />
+          ${f.name}
+        </label>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function createGroup(e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('groupName');
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    const selectedFriends = Array.from(document.querySelectorAll('input[name="groupFriendMember"]:checked')).map(cb => cb.value);
+
+    if (selectedFriends.length === 0) {
+      alert('Selecciona al menos 1 amigo para formar el grupo.');
+      return;
+    }
+
+    // El grupo incluye a user_me y a los amigos seleccionados
+    const memberIds = ['user_me', ...selectedFriends];
+
+    appState.groups.push({
+      id: 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: name,
+      memberIds: memberIds
+    });
+
+    saveState();
+    nameInput.value = '';
+    renderAll();
+  }
+
+  function deleteGroup(groupId) {
+    const grp = appState.groups.find(g => g.id === groupId);
+    if (!grp) return;
+    if (!confirm(`Eliminar grupo "${grp.name}"?`)) return;
+
+    appState.groups = appState.groups.filter(g => g.id !== groupId);
+    saveState();
+    renderAll();
+  }
+
+  function openExpenseModal(groupId) {
+    const grp = appState.groups.find(g => g.id === groupId);
+    if (!grp) return;
+
+    document.getElementById('modalGroupId').value = groupId;
+    document.getElementById('modalGroupTitle').textContent = `Gasto en "${grp.name}"`;
+    document.getElementById('modalExpenseAmount').value = '';
+    document.getElementById('modalExpenseConcept').value = '';
+
+    const payerSel = document.getElementById('modalExpensePayer');
+    payerSel.innerHTML = '';
+    grp.memberIds.forEach(mId => {
+      const opt = document.createElement('option');
+      opt.value = mId;
+      opt.textContent = (mId === 'user_me') ? `${appState.user.name} (Tu)` : getFriendName(mId);
+      payerSel.appendChild(opt);
+    });
+
+    const checkContainer = document.getElementById('modalMembersCheckboxes');
+    let html = '';
+    grp.memberIds.forEach(mId => {
+      const displayName = (mId === 'user_me') ? `${appState.user.name} (Tu)` : getFriendName(mId);
+      html += `
+        <label class="checkbox-label">
+          <input type="checkbox" name="splitMember" value="${mId}" checked />
+          ${displayName}
+        </label>
+      `;
+    });
+    checkContainer.innerHTML = html;
+
+    updateSplitPreview();
+    document.getElementById('expenseModal').showModal();
+  }
+
+  function updateSplitPreview() {
+    const amount = parseFloat(document.getElementById('modalExpenseAmount').value) || 0;
+    const checked = document.querySelectorAll('input[name="splitMember"]:checked');
+    const count = checked.length;
+    const previewEl = document.getElementById('splitPreviewText');
+
+    if (amount > 0 && count > 0) {
+      const perPerson = (amount / count).toFixed(2);
+      previewEl.innerHTML = `Total ${formatMoney(amount)} entre ${count} participantes = <strong>${formatMoney(perPerson)} c/u</strong>`;
+    } else {
+      previewEl.textContent = 'Indica participantes y monto para calcular.';
+    }
+  }
+
+  function saveGroupExpense(e) {
+    e.preventDefault();
+    const groupId = document.getElementById('modalGroupId').value;
+    const grp = appState.groups.find(g => g.id === groupId);
+    if (!grp) return;
+
+    const payerId = document.getElementById('modalExpensePayer').value;
+    const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
+    const concept = document.getElementById('modalExpenseConcept').value.trim();
+    const checkedMembers = Array.from(document.querySelectorAll('input[name="splitMember"]:checked')).map(cb => cb.value);
+
+    if (!amount || amount <= 0) {
+      alert('Monto invalido.');
+      return;
+    }
+
+    if (checkedMembers.length === 0) {
+      alert('Selecciona al menos 1 participante.');
+      return;
+    }
+
+    const share = parseFloat((amount / checkedMembers.length).toFixed(2));
+    const dateStr = new Date().toLocaleDateString('es-AR');
+
+    // Regla: Solo registramos deudas entre el usuario ('user_me') y los amigos
+    if (payerId === 'user_me') {
+      // Si yo pague, cada amigo participante me debe su cuota
+      checkedMembers.forEach(memberId => {
+        if (memberId !== 'user_me') {
+          appState.debts.unshift({
+            id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            friendId: memberId,
+            direction: 'lent', // El amigo me debe
+            amount: share,
+            concept: `${concept} (${grp.name})`,
+            date: dateStr,
+            settled: false,
+            groupId: groupId
+          });
+        }
+      });
+    } else {
+      // Si pago un amigo, solo se registra si "Yo" participe en el gasto
+      if (checkedMembers.includes('user_me')) {
+        appState.debts.unshift({
+          id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          friendId: payerId,
+          direction: 'borrowed', // Yo le debo al amigo
+          amount: share,
+          concept: `${concept} (${grp.name})`,
+          date: dateStr,
+          settled: false,
+          groupId: groupId
+        });
+      }
+    }
+
+    saveState();
+    document.getElementById('expenseModal').close();
+    renderAll();
+  }
+
+  function renderGroups() {
+    const listEl = document.getElementById('groupsList');
+    if (appState.groups.length === 0) {
+      listEl.innerHTML = '<div class="empty-msg">No hay grupos creados.</div>';
+      return;
+    }
+
+    let html = '';
+    appState.groups.forEach(g => {
+      const memberNames = g.memberIds.map(mId => (mId === 'user_me') ? appState.user.name : getFriendName(mId));
+      const tagsHtml = memberNames.map(name => `<span class="member-tag">${name}</span>`).join('');
+      const groupDebts = appState.debts.filter(d => d.groupId === g.id);
+
+      html += `
+        <div class="group-card">
+          <div class="group-header">
+            <h3 style="font-size: 0.95rem; font-weight: 700;">${g.name}</h3>
+            <button class="btn-text-danger" onclick="deleteGroup('${g.id}')">Eliminar</button>
+          </div>
+          <div class="member-tags">
+            ${tagsHtml}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              ${groupDebts.length} partes cargadas
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openExpenseModal('${g.id}')">
+              + Gasto
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    listEl.innerHTML = html;
+  }
+
+  function switchTab(tabKey) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.style.display = 'none');
+
+    if (tabKey === 'friends') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('tab-friends').style.display = 'block';
+    } else if (tabKey === 'debts') {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('tab-debts').style.display = 'block';
+    } else if (tabKey === 'groups') {
+      document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      document.getElementById('tab-groups').style.display = 'block';
+    }
+  }
+
+  function loadSampleData() {
+    if (appState.friends.length > 0 && !confirm('Reemplazar con datos de ejemplo?')) return;
+
+    const today = new Date().toLocaleDateString('es-AR');
+    appState = {
+      user: { id: 'user_me', name: 'Yo' },
+      friends: [
+        { id: 'f_lucas', name: 'Lucas' },
+        { id: 'f_sofia', name: 'Sofia' },
+        { id: 'f_martin', name: 'Martin' }
+      ],
+      debts: [
+        { id: 'd_1', friendId: 'f_lucas', direction: 'lent', amount: 3500, concept: 'Cena', date: today, settled: false, groupId: null },
+        { id: 'd_2', friendId: 'f_sofia', direction: 'borrowed', amount: 1200, concept: 'Helado', date: today, settled: false, groupId: null },
+        { id: 'd_3', friendId: 'f_martin', direction: 'borrowed', amount: 4000, concept: 'Carne (Asado)', date: today, settled: false, groupId: 'g_asado' }
+      ],
+      groups: [
+        { id: 'g_asado', name: 'Asado', memberIds: ['user_me', 'f_lucas', 'f_martin'] }
+      ]
+    };
+
+    saveState();
+    renderAll();
+  }
+
+  function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const dl = document.createElement('a');
+    dl.setAttribute("href", dataStr);
+    dl.setAttribute("download", "cuentas_backup.json");
+    dl.click();
+  }
+
+  function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (imported.friends && imported.debts) {
+            appState = imported;
+            saveState();
+            renderAll();
+            alert('Datos importados.');
+          } else {
+            alert('Formato no valido.');
+          }
+        } catch (err) {
+          alert('Error al leer archivo.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function resetData() {
+    if (confirm('Reiniciar todos los datos?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      appState = {
+        user: { id: 'user_me', name: 'Yo' },
+        friends: [],
+        debts: [],
+        groups: []
+      };
+      saveState();
+      renderAll();
+    }
+  }
+
+  function renderAll() {
+    document.getElementById('userNameDisplay').textContent = appState.user.name;
+    calculateOverview();
+    renderFriendsList();
+    populateFriendSelect();
+    renderDebts();
+    renderGroupMemberSelection();
+    renderGroups();
+  }
+
+  loadState();
+  renderAll();
+</script>
+
+</body>
+</html>
