@@ -272,13 +272,32 @@ function reactivateDebt(debtId) {
 }
 
 /* ==========================================================================
-   MODAL DE SALDADO POR PORCENTAJE O MONTO
+   MODAL DE SALDADO POR PORCENTAJE O MONTO EXCLUSIVO
    ========================================================================== */
+let currentSettleMode = 'percent'; // 'percent' o 'amount'
+
+function setSettleMode(mode) {
+  currentSettleMode = mode;
+
+  const btnPct = document.getElementById('modeBtnPct');
+  const btnAmt = document.getElementById('modeBtnAmt');
+  const secPct = document.getElementById('settlePercentSection');
+  const secAmt = document.getElementById('settleAmountSection');
+
+  if (btnPct) btnPct.classList.toggle('active', mode === 'percent');
+  if (btnAmt) btnAmt.classList.toggle('active', mode === 'amount');
+  if (secPct) secPct.style.display = mode === 'percent' ? 'block' : 'none';
+  if (secAmt) secAmt.style.display = mode === 'amount' ? 'block' : 'none';
+
+  updateSettlePreview();
+}
+
 function openSettleModal(type, targetId, totalAmount) {
   currentSettleTarget = { type, id: targetId, amount: totalAmount };
 
   const titleEl = document.getElementById('settleModalTitle');
   const amountEl = document.getElementById('settleTotalAmount');
+  const amtInput = document.getElementById('settleAmountInput');
 
   if (type === 'debt') {
     const debt = appState.debts.find(d => d.id === targetId);
@@ -289,76 +308,142 @@ function openSettleModal(type, targetId, totalAmount) {
   }
 
   amountEl.textContent = formatMoney(totalAmount);
+  if (amtInput) {
+    amtInput.max = totalAmount;
+    amtInput.value = totalAmount;
+  }
+
+  setSettleMode('percent');
   selectPercentPreset(100);
 
   document.getElementById('settleModal').showModal();
 }
 
 function selectPercentPreset(pct) {
-  const total = currentSettleTarget.amount;
-  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
-
   const pctInput = document.getElementById('settlePercentageInput');
-  const amtInput = document.getElementById('settleAmountInput');
-
   if (pctInput) pctInput.value = pct;
-  if (amtInput) amtInput.value = payAmount;
 
   document.querySelectorAll('.percent-btn').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.pct) === Number(pct));
   });
+
+  const total = currentSettleTarget.amount;
+  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
+  const amtInput = document.getElementById('settleAmountInput');
+  if (amtInput) amtInput.value = payAmount;
+
   updateSettlePreview();
 }
 
 function onCustomPercentInput() {
-  const total = currentSettleTarget.amount;
-  const pct = Math.min(100, Math.max(1, Number(document.getElementById('settlePercentageInput').value) || 0));
-  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
-
-  const amtInput = document.getElementById('settleAmountInput');
-  if (amtInput) amtInput.value = payAmount;
+  const pctInput = document.getElementById('settlePercentageInput');
+  const pct = Number(pctInput.value);
 
   document.querySelectorAll('.percent-btn').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
   });
+
+  const total = currentSettleTarget.amount;
+  if (!isNaN(pct) && pct > 0 && pct <= 100) {
+    const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
+    const amtInput = document.getElementById('settleAmountInput');
+    if (amtInput) amtInput.value = payAmount;
+  }
+
   updateSettlePreview();
 }
 
 function onCustomAmountInput() {
-  const total = currentSettleTarget.amount;
   const amtInput = document.getElementById('settleAmountInput');
-  const payAmount = Math.min(total, Math.max(0.01, Number(amtInput.value) || 0));
-  const pct = Math.min(100, Math.max(1, Math.round((payAmount / total) * 100)));
+  const amt = Number(amtInput.value);
+  const total = currentSettleTarget.amount;
 
-  const pctInput = document.getElementById('settlePercentageInput');
-  if (pctInput) pctInput.value = pct;
+  if (!isNaN(amt) && amt > 0 && amt <= total) {
+    const pct = Math.min(100, Math.max(1, Math.round((amt / total) * 100)));
+    const pctInput = document.getElementById('settlePercentageInput');
+    if (pctInput) pctInput.value = pct;
 
-  document.querySelectorAll('.percent-btn').forEach(btn => {
-    btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
-  });
+    document.querySelectorAll('.percent-btn').forEach(btn => {
+      btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
+    });
+  } else {
+    document.querySelectorAll('.percent-btn').forEach(btn => btn.classList.remove('active'));
+  }
+
   updateSettlePreview();
 }
 
 function updateSettlePreview() {
-  const pct = Math.min(100, Math.max(1, Number(document.getElementById('settlePercentageInput').value) || 0));
   const total = currentSettleTarget.amount;
-  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
-  const remaining = parseFloat((total - payAmount).toFixed(2));
-
   const previewEl = document.getElementById('settlePreviewText');
-  if (previewEl) {
+  if (!previewEl) return;
+
+  if (currentSettleMode === 'percent') {
+    const pct = Number(document.getElementById('settlePercentageInput').value);
+    if (isNaN(pct) || pct <= 0) {
+      previewEl.innerHTML = '<span style="color: var(--negative);">Ingresa un porcentaje mayor a 0.</span>';
+      return;
+    }
+    if (pct > 100) {
+      previewEl.innerHTML = '<span style="color: var(--negative);">El porcentaje no puede ser mayor al 100%.</span>';
+      return;
+    }
+    const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
+    const remaining = parseFloat((total - payAmount).toFixed(2));
     previewEl.innerHTML = `Saldar <strong>${pct}%</strong> (${formatMoney(payAmount)}) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
+  } else {
+    const amt = Number(document.getElementById('settleAmountInput').value);
+    if (isNaN(amt) || amt <= 0) {
+      previewEl.innerHTML = '<span style="color: var(--negative);">Ingresa un monto mayor a $0.</span>';
+      return;
+    }
+    if (amt > total) {
+      previewEl.innerHTML = `<span style="color: var(--negative);">El monto no puede superar la deuda pendiente (${formatMoney(total)}).</span>`;
+      return;
+    }
+    const remaining = parseFloat((total - amt).toFixed(2));
+    const pct = parseFloat(((amt / total) * 100).toFixed(1));
+    previewEl.innerHTML = `Saldar <strong>${formatMoney(amt)}</strong> (${pct}%) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
   }
 }
 
 function confirmSettle(e) {
   e.preventDefault();
-  const pct = Math.min(100, Math.max(1, Number(document.getElementById('settlePercentageInput').value) || 100));
+  const total = currentSettleTarget.amount;
 
-  if (currentSettleTarget.type === 'debt') {
-    settleDebtPartial(currentSettleTarget.id, pct);
-  } else if (currentSettleTarget.type === 'friend') {
-    settleFriendBalancePartial(currentSettleTarget.id, pct);
+  if (currentSettleMode === 'percent') {
+    const pct = Number(document.getElementById('settlePercentageInput').value);
+    if (isNaN(pct) || pct <= 0) {
+      alert('Ingresa un porcentaje válido mayor a 0.');
+      return;
+    }
+    if (pct > 100) {
+      alert('El porcentaje no puede superar el 100%.');
+      return;
+    }
+
+    if (currentSettleTarget.type === 'debt') {
+      settleDebtPartial(currentSettleTarget.id, pct);
+    } else if (currentSettleTarget.type === 'friend') {
+      settleFriendBalancePartial(currentSettleTarget.id, pct);
+    }
+  } else {
+    const amt = Number(document.getElementById('settleAmountInput').value);
+    if (isNaN(amt) || amt <= 0) {
+      alert('Ingresa un monto válido mayor a $0.');
+      return;
+    }
+    if (amt > total) {
+      alert(`El monto no puede superar la deuda pendiente (${formatMoney(total)}).`);
+      return;
+    }
+
+    if (currentSettleTarget.type === 'debt') {
+      settleDebtByAmount(currentSettleTarget.id, amt);
+    } else if (currentSettleTarget.type === 'friend') {
+      const pct = Math.min(100, (amt / total) * 100);
+      settleFriendBalancePartial(currentSettleTarget.id, pct);
+    }
   }
 
   document.getElementById('settleModal').close();

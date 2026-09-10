@@ -173,23 +173,31 @@
         Pendiente actual: <strong id="settleTotalAmount" style="color: var(--text);">$0</strong>
       </div>
 
-      <div class="form-group">
-        <label>Porcentaje a saldar</label>
+      <!-- Selector de modo exclusivo: Porcentaje vs Monto -->
+      <div class="settle-mode-tabs">
+        <button type="button" class="settle-mode-btn active" id="modeBtnPct" onclick="setSettleMode('percent')">Porcentaje</button>
+        <button type="button" class="settle-mode-btn" id="modeBtnAmt" onclick="setSettleMode('amount')">Monto ($)</button>
+      </div>
+
+      <!-- Modo 1: Porcentaje -->
+      <div id="settlePercentSection">
         <div class="percent-grid">
           <button type="button" class="percent-btn" data-pct="25" onclick="selectPercentPreset(25)">25%</button>
           <button type="button" class="percent-btn" data-pct="50" onclick="selectPercentPreset(50)">50%</button>
           <button type="button" class="percent-btn" data-pct="75" onclick="selectPercentPreset(75)">75%</button>
           <button type="button" class="percent-btn active" data-pct="100" onclick="selectPercentPreset(100)">100%</button>
         </div>
-        <div class="form-row">
-          <div>
-            <label style="font-size: 0.7rem;">Porcentaje (%)</label>
-            <input type="number" id="settlePercentageInput" min="1" max="100" value="100" oninput="onCustomPercentInput()" />
-          </div>
-          <div>
-            <label style="font-size: 0.7rem;">O Monto ($)</label>
-            <input type="number" id="settleAmountInput" min="0.01" step="any" oninput="onCustomAmountInput()" />
-          </div>
+        <div class="form-group">
+          <label style="font-size: 0.75rem;">Porcentaje (%)</label>
+          <input type="number" id="settlePercentageInput" min="1" max="100" value="100" oninput="onCustomPercentInput()" />
+        </div>
+      </div>
+
+      <!-- Modo 2: Monto -->
+      <div id="settleAmountSection" style="display: none;">
+        <div class="form-group">
+          <label style="font-size: 0.75rem;">Monto a saldar ($)</label>
+          <input type="number" id="settleAmountInput" min="0.01" step="any" oninput="onCustomAmountInput()" />
         </div>
       </div>
 

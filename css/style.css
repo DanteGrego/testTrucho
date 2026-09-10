@@ -416,6 +416,38 @@ button.btn:active {
   margin: 0;
 }
 
+/* Settle Mode Tabs */
+.settle-mode-tabs {
+  display: flex;
+  background: var(--surface-subtle);
+  padding: 3px;
+  border-radius: var(--radius);
+  gap: 4px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
+.settle-mode-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.settle-mode-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
 /* Percentage Quick Selector */
 .percent-grid {
   display: grid;
