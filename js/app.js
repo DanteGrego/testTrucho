@@ -284,39 +284,77 @@ function setSettleMode(mode) {
   const secPct = document.getElementById('settlePercentSection');
   const secAmt = document.getElementById('settleAmountSection');
 
-  if (btnPct) btnPct.classList.toggle('active', mode === 'percent');
-  if (btnAmt) btnAmt.classList.toggle('active', mode === 'amount');
+  if (btnPct) {
+    btnPct.classList.toggle('active', mode === 'percent');
+    btnPct.setAttribute('aria-selected', mode === 'percent' ? 'true' : 'false');
+  }
+  if (btnAmt) {
+    btnAmt.classList.toggle('active', mode === 'amount');
+    btnAmt.setAttribute('aria-selected', mode === 'amount' ? 'true' : 'false');
+  }
   if (secPct) secPct.style.display = mode === 'percent' ? 'block' : 'none';
   if (secAmt) secAmt.style.display = mode === 'amount' ? 'block' : 'none';
+
+  const total = currentSettleTarget.amount;
+  if (mode === 'amount') {
+    const pctInput = document.getElementById('settlePercentageInput');
+    const amtInput = document.getElementById('settleAmountInput');
+    const pct = Number(pctInput.value) || 100;
+    const clampedPct = Math.min(100, Math.max(1, pct));
+    const payAmount = parseFloat((total * (clampedPct / 100)).toFixed(2));
+    if (amtInput) {
+      amtInput.value = payAmount;
+      setTimeout(() => amtInput.focus(), 50);
+    }
+  } else {
+    const amtInput = document.getElementById('settleAmountInput');
+    const pctInput = document.getElementById('settlePercentageInput');
+    const amt = Number(amtInput.value);
+    if (!isNaN(amt) && amt > 0 && total > 0) {
+      const pct = Math.min(100, Math.max(1, Math.round((amt / total) * 100)));
+      if (pctInput) pctInput.value = pct;
+      document.querySelectorAll('.percent-btn').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
+      });
+    }
+  }
 
   updateSettlePreview();
 }
 
 function openSettleModal(type, targetId, totalAmount) {
-  currentSettleTarget = { type, id: targetId, amount: totalAmount };
+  const validTotal = Math.abs(Number(totalAmount)) || 0;
+  currentSettleTarget = { type, id: targetId, amount: validTotal };
 
   const titleEl = document.getElementById('settleModalTitle');
   const amountEl = document.getElementById('settleTotalAmount');
   const amtInput = document.getElementById('settleAmountInput');
+  const pctInput = document.getElementById('settlePercentageInput');
 
   if (type === 'debt') {
     const debt = appState.debts.find(d => d.id === targetId);
-    titleEl.textContent = `Saldar: ${debt ? debt.concept : ''}`;
+    titleEl.textContent = `Saldar: ${debt && debt.concept ? debt.concept : 'Deuda'}`;
   } else {
     const friendName = getFriendName(targetId);
     titleEl.textContent = `Saldar balance con ${friendName}`;
   }
 
-  amountEl.textContent = formatMoney(totalAmount);
+  amountEl.textContent = formatMoney(validTotal);
   if (amtInput) {
-    amtInput.max = totalAmount;
-    amtInput.value = totalAmount;
+    amtInput.max = validTotal;
+    amtInput.value = validTotal;
+  }
+  if (pctInput) {
+    pctInput.value = 100;
   }
 
   setSettleMode('percent');
   selectPercentPreset(100);
 
-  document.getElementById('settleModal').showModal();
+  const modal = document.getElementById('settleModal');
+  if (modal && typeof modal.showModal === 'function') {
+    modal.showModal();
+  }
 }
 
 function selectPercentPreset(pct) {
@@ -337,7 +375,13 @@ function selectPercentPreset(pct) {
 
 function onCustomPercentInput() {
   const pctInput = document.getElementById('settlePercentageInput');
-  const pct = Number(pctInput.value);
+  let pct = Number(pctInput.value);
+
+  // Limitar estrictamente a 100%
+  if (pct > 100) {
+    pctInput.value = 100;
+    pct = 100;
+  }
 
   document.querySelectorAll('.percent-btn').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
@@ -355,8 +399,14 @@ function onCustomPercentInput() {
 
 function onCustomAmountInput() {
   const amtInput = document.getElementById('settleAmountInput');
-  const amt = Number(amtInput.value);
+  let amt = Number(amtInput.value);
   const total = currentSettleTarget.amount;
+
+  // Limitar estrictamente al monto de la deuda pendiente
+  if (amt > total) {
+    amtInput.value = total;
+    amt = total;
+  }
 
   if (!isNaN(amt) && amt > 0 && amt <= total) {
     const pct = Math.min(100, Math.max(1, Math.round((amt / total) * 100)));
@@ -376,49 +426,52 @@ function onCustomAmountInput() {
 function updateSettlePreview() {
   const total = currentSettleTarget.amount;
   const previewEl = document.getElementById('settlePreviewText');
+  const confirmBtn = document.getElementById('settleConfirmBtn');
   if (!previewEl) return;
 
   if (currentSettleMode === 'percent') {
     const pct = Number(document.getElementById('settlePercentageInput').value);
     if (isNaN(pct) || pct <= 0) {
       previewEl.innerHTML = '<span style="color: var(--negative);">Ingresa un porcentaje mayor a 0.</span>';
+      if (confirmBtn) confirmBtn.disabled = true;
       return;
     }
     if (pct > 100) {
       previewEl.innerHTML = '<span style="color: var(--negative);">El porcentaje no puede ser mayor al 100%.</span>';
+      if (confirmBtn) confirmBtn.disabled = true;
       return;
     }
     const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
-    const remaining = parseFloat((total - payAmount).toFixed(2));
+    const remaining = parseFloat(Math.max(0, total - payAmount).toFixed(2));
     previewEl.innerHTML = `Saldar <strong>${pct}%</strong> (${formatMoney(payAmount)}) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
+    if (confirmBtn) confirmBtn.disabled = false;
   } else {
     const amt = Number(document.getElementById('settleAmountInput').value);
     if (isNaN(amt) || amt <= 0) {
       previewEl.innerHTML = '<span style="color: var(--negative);">Ingresa un monto mayor a $0.</span>';
+      if (confirmBtn) confirmBtn.disabled = true;
       return;
     }
     if (amt > total) {
       previewEl.innerHTML = `<span style="color: var(--negative);">El monto no puede superar la deuda pendiente (${formatMoney(total)}).</span>`;
+      if (confirmBtn) confirmBtn.disabled = true;
       return;
     }
-    const remaining = parseFloat((total - amt).toFixed(2));
+    const remaining = parseFloat(Math.max(0, total - amt).toFixed(2));
     const pct = parseFloat(((amt / total) * 100).toFixed(1));
     previewEl.innerHTML = `Saldar <strong>${formatMoney(amt)}</strong> (${pct}%) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
+    if (confirmBtn) confirmBtn.disabled = false;
   }
 }
 
 function confirmSettle(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   const total = currentSettleTarget.amount;
 
   if (currentSettleMode === 'percent') {
     const pct = Number(document.getElementById('settlePercentageInput').value);
-    if (isNaN(pct) || pct <= 0) {
-      alert('Ingresa un porcentaje válido mayor a 0.');
-      return;
-    }
-    if (pct > 100) {
-      alert('El porcentaje no puede superar el 100%.');
+    if (isNaN(pct) || pct <= 0 || pct > 100) {
+      alert('Ingresa un porcentaje válido entre 1% y 100%.');
       return;
     }
 
@@ -429,12 +482,8 @@ function confirmSettle(e) {
     }
   } else {
     const amt = Number(document.getElementById('settleAmountInput').value);
-    if (isNaN(amt) || amt <= 0) {
-      alert('Ingresa un monto válido mayor a $0.');
-      return;
-    }
-    if (amt > total) {
-      alert(`El monto no puede superar la deuda pendiente (${formatMoney(total)}).`);
+    if (isNaN(amt) || amt <= 0 || amt > total) {
+      alert(`Ingresa un monto válido entre $0 y ${formatMoney(total)}.`);
       return;
     }
 
@@ -446,7 +495,10 @@ function confirmSettle(e) {
     }
   }
 
-  document.getElementById('settleModal').close();
+  const modal = document.getElementById('settleModal');
+  if (modal && typeof modal.close === 'function') {
+    modal.close();
+  }
   renderAll();
 }
 
@@ -697,9 +749,33 @@ function renderAll() {
   renderGroups();
 }
 
-// Inicialización
+// Inicialización y enlace de eventos del modal
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   renderAll();
+
+  // Enlace programático para el selector de modo de saldado
+  const modeBtnPct = document.getElementById('modeBtnPct');
+  const modeBtnAmt = document.getElementById('modeBtnAmt');
+  if (modeBtnPct) {
+    modeBtnPct.addEventListener('click', (e) => {
+      e.preventDefault();
+      setSettleMode('percent');
+    });
+  }
+  if (modeBtnAmt) {
+    modeBtnAmt.addEventListener('click', (e) => {
+      e.preventDefault();
+      setSettleMode('amount');
+    });
+  }
 });
+
+// Exposición global para garantizar compatibilidad con inline onclick y evaluadores externos
+window.setSettleMode = setSettleMode;
+window.selectPercentPreset = selectPercentPreset;
+window.onCustomPercentInput = onCustomPercentInput;
+window.onCustomAmountInput = onCustomAmountInput;
+window.openSettleModal = openSettleModal;
+window.confirmSettle = confirmSettle;
 

@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cuentas</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script defer src="js/state.js"></script>
-  <script defer src="js/app.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=20260910_3">
+  <script defer src="js/state.js?v=20260910_3"></script>
+  <script defer src="js/app.js?v=20260910_3"></script>
 </head>
 <body>
 
@@ -174,9 +174,9 @@
       </div>
 
       <!-- Selector de modo exclusivo: Porcentaje vs Monto -->
-      <div class="settle-mode-tabs">
-        <button type="button" class="settle-mode-btn active" id="modeBtnPct" onclick="setSettleMode('percent')">Porcentaje</button>
-        <button type="button" class="settle-mode-btn" id="modeBtnAmt" onclick="setSettleMode('amount')">Monto ($)</button>
+      <div class="settle-mode-tabs" role="tablist">
+        <button type="button" class="settle-mode-btn active" id="modeBtnPct" role="tab" aria-selected="true" onclick="setSettleMode('percent')">Porcentaje (%)</button>
+        <button type="button" class="settle-mode-btn" id="modeBtnAmt" role="tab" aria-selected="false" onclick="setSettleMode('amount')">Monto ($)</button>
       </div>
 
       <!-- Modo 1: Porcentaje -->
@@ -207,7 +207,7 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 8px;">
         <button type="button" class="btn btn-subtle" onclick="document.getElementById('settleModal').close()">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Confirmar</button>
+        <button type="submit" id="settleConfirmBtn" class="btn btn-primary">Confirmar</button>
       </div>
     </form>
   </dialog>
