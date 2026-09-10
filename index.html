@@ -168,9 +168,9 @@
   <!-- Modal saldar por porcentaje -->
   <dialog id="settleModal">
     <form method="dialog" onsubmit="confirmSettle(event)">
-      <h2 style="font-size: 1rem; margin-bottom: 6px;" id="settleModalTitle">Saldar deuda</h2>
+      <h2 style="font-size: 1rem; margin-bottom: 6px;" id="settleModalTitle">Saldar</h2>
       <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
-        Total: <strong id="settleTotalAmount" style="color: var(--text);">$0</strong>
+        Pendiente actual: <strong id="settleTotalAmount" style="color: var(--text);">$0</strong>
       </div>
 
       <div class="form-group">
@@ -181,7 +181,16 @@
           <button type="button" class="percent-btn" data-pct="75" onclick="selectPercentPreset(75)">75%</button>
           <button type="button" class="percent-btn active" data-pct="100" onclick="selectPercentPreset(100)">100%</button>
         </div>
-        <input type="number" id="settlePercentageInput" min="1" max="100" value="100" oninput="onCustomPercentInput()" />
+        <div class="form-row">
+          <div>
+            <label style="font-size: 0.7rem;">Porcentaje (%)</label>
+            <input type="number" id="settlePercentageInput" min="1" max="100" value="100" oninput="onCustomPercentInput()" />
+          </div>
+          <div>
+            <label style="font-size: 0.7rem;">O Monto ($)</label>
+            <input type="number" id="settleAmountInput" min="0.01" step="any" oninput="onCustomAmountInput()" />
+          </div>
+        </div>
       </div>
 
       <div id="settlePreviewText" style="font-size: 0.78rem; color: var(--text-muted); background: var(--surface-subtle); padding: 8px 10px; border-radius: 6px; margin-bottom: 14px; border: 1px solid var(--border);">

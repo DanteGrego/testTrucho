@@ -213,6 +213,7 @@ function renderDebts() {
     const friendName = getFriendName(d.friendId);
     const isSettled = d.settled;
     const relationText = d.direction === 'lent' ? 'Me debe' : 'Debo';
+    const isPartial = !isSettled && d.partialPayments && d.partialPayments.length > 0;
 
     let actionBtnHtml = '';
     if (!isSettled) {
@@ -221,21 +222,34 @@ function renderDebts() {
       actionBtnHtml = `<button class="btn btn-subtle btn-sm" onclick="reactivateDebt('${d.id}')">Deshacer</button>`;
     }
 
+    let partialInfoHtml = '';
+    if (isPartial && d.originalAmount) {
+      const totalPaid = d.originalAmount - d.amount;
+      partialInfoHtml = `
+        <div style="font-size: 0.72rem; color: var(--positive); margin-top: 2px;">
+          Pagado: ${formatMoney(totalPaid)} de ${formatMoney(d.originalAmount)}
+        </div>
+      `;
+    }
+
     html += `
       <div class="debt-item ${isSettled ? 'settled' : ''}">
         <div>
           <div class="debt-desc">
             ${d.concept}
             ${d.groupId ? '<span class="badge neutral" style="font-size: 0.68rem; margin-left: 4px;">Grupo</span>' : ''}
+            ${isPartial ? '<span class="badge pos" style="font-size: 0.68rem; margin-left: 4px;">Parcial</span>' : ''}
             ${isSettled ? '<span class="badge neutral" style="font-size: 0.68rem; margin-left: 4px;">Saldada</span>' : ''}
           </div>
           <div class="debt-sub">
             ${friendName} • ${relationText} • ${d.date}
           </div>
+          ${partialInfoHtml}
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <div class="debt-amount">
             <div class="val">${formatMoney(d.amount)}</div>
+            ${isPartial ? '<div style="font-size: 0.68rem; color: var(--text-muted);">pendiente</div>' : ''}
           </div>
           ${actionBtnHtml}
           <button class="btn-text-danger" onclick="deleteDebt('${d.id}')" title="Eliminar">Eliminar</button>
@@ -251,37 +265,45 @@ function reactivateDebt(debtId) {
   const debt = appState.debts.find(d => d.id === debtId);
   if (!debt) return;
   debt.settled = false;
+  debt.amount = debt.originalAmount || debt.amount;
+  debt.partialPayments = [];
   saveState();
   renderAll();
 }
 
 /* ==========================================================================
-   MODAL DE SALDADO POR PORCENTAJE
+   MODAL DE SALDADO POR PORCENTAJE O MONTO
    ========================================================================== */
 function openSettleModal(type, targetId, totalAmount) {
   currentSettleTarget = { type, id: targetId, amount: totalAmount };
 
   const titleEl = document.getElementById('settleModalTitle');
   const amountEl = document.getElementById('settleTotalAmount');
-  const pctInput = document.getElementById('settlePercentageInput');
 
   if (type === 'debt') {
     const debt = appState.debts.find(d => d.id === targetId);
-    titleEl.textContent = `Saldar deuda: ${debt ? debt.concept : ''}`;
+    titleEl.textContent = `Saldar: ${debt ? debt.concept : ''}`;
   } else {
     const friendName = getFriendName(targetId);
     titleEl.textContent = `Saldar balance con ${friendName}`;
   }
 
   amountEl.textContent = formatMoney(totalAmount);
-  pctInput.value = 100;
   selectPercentPreset(100);
 
   document.getElementById('settleModal').showModal();
 }
 
 function selectPercentPreset(pct) {
-  document.getElementById('settlePercentageInput').value = pct;
+  const total = currentSettleTarget.amount;
+  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
+
+  const pctInput = document.getElementById('settlePercentageInput');
+  const amtInput = document.getElementById('settleAmountInput');
+
+  if (pctInput) pctInput.value = pct;
+  if (amtInput) amtInput.value = payAmount;
+
   document.querySelectorAll('.percent-btn').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.pct) === Number(pct));
   });
@@ -289,9 +311,30 @@ function selectPercentPreset(pct) {
 }
 
 function onCustomPercentInput() {
-  const val = Number(document.getElementById('settlePercentageInput').value);
+  const total = currentSettleTarget.amount;
+  const pct = Math.min(100, Math.max(1, Number(document.getElementById('settlePercentageInput').value) || 0));
+  const payAmount = parseFloat((total * (pct / 100)).toFixed(2));
+
+  const amtInput = document.getElementById('settleAmountInput');
+  if (amtInput) amtInput.value = payAmount;
+
   document.querySelectorAll('.percent-btn').forEach(btn => {
-    btn.classList.toggle('active', Number(btn.dataset.pct) === val);
+    btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
+  });
+  updateSettlePreview();
+}
+
+function onCustomAmountInput() {
+  const total = currentSettleTarget.amount;
+  const amtInput = document.getElementById('settleAmountInput');
+  const payAmount = Math.min(total, Math.max(0.01, Number(amtInput.value) || 0));
+  const pct = Math.min(100, Math.max(1, Math.round((payAmount / total) * 100)));
+
+  const pctInput = document.getElementById('settlePercentageInput');
+  if (pctInput) pctInput.value = pct;
+
+  document.querySelectorAll('.percent-btn').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.pct) === pct);
   });
   updateSettlePreview();
 }
@@ -303,7 +346,9 @@ function updateSettlePreview() {
   const remaining = parseFloat((total - payAmount).toFixed(2));
 
   const previewEl = document.getElementById('settlePreviewText');
-  previewEl.innerHTML = `Saldar <strong>${pct}%</strong> (${formatMoney(payAmount)}) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
+  if (previewEl) {
+    previewEl.innerHTML = `Saldar <strong>${pct}%</strong> (${formatMoney(payAmount)}) • Saldo restante: <strong>${formatMoney(remaining)}</strong>`;
+  }
 }
 
 function confirmSettle(e) {

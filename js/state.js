@@ -20,6 +20,12 @@ function loadState() {
       appState.friends = parsed.friends || [];
       appState.debts = parsed.debts || [];
       appState.groups = parsed.groups || [];
+
+      // Inicializar propiedades de pagos parciales si no existen
+      appState.debts.forEach(d => {
+        if (d.originalAmount === undefined) d.originalAmount = d.amount;
+        if (!d.partialPayments) d.partialPayments = [];
+      });
     }
   } catch (e) {
     console.error('Error al cargar datos:', e);
@@ -93,31 +99,69 @@ function settleDebtPartial(debtId, percentage) {
   const debt = appState.debts.find(d => d.id === debtId);
   if (!debt || debt.settled) return false;
 
+  if (debt.originalAmount === undefined) debt.originalAmount = debt.amount;
+  if (!debt.partialPayments) debt.partialPayments = [];
+
   const pct = Math.min(100, Math.max(1, Number(percentage)));
 
   if (pct >= 100) {
+    const payAmount = debt.amount;
+    debt.partialPayments.push({
+      date: new Date().toLocaleDateString('es-AR'),
+      amount: payAmount,
+      percentage: 100
+    });
+    debt.amount = 0;
     debt.settled = true;
   } else {
-    const settledAmount = parseFloat((debt.amount * (pct / 100)).toFixed(2));
-    const remainingAmount = parseFloat((debt.amount - settledAmount).toFixed(2));
+    const payAmount = parseFloat((debt.amount * (pct / 100)).toFixed(2));
+    const remainingAmount = parseFloat((debt.amount - payAmount).toFixed(2));
+
+    debt.partialPayments.push({
+      date: new Date().toLocaleDateString('es-AR'),
+      amount: payAmount,
+      percentage: pct
+    });
 
     if (remainingAmount <= 0.01) {
+      debt.amount = 0;
       debt.settled = true;
     } else {
-      // Ajustar deuda activa al saldo restante
       debt.amount = remainingAmount;
-      // Generar registro histórico de pago saldado
-      appState.debts.unshift({
-        id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        friendId: debt.friendId,
-        direction: debt.direction,
-        amount: settledAmount,
-        concept: `${debt.concept} (Pago ${pct}%)`,
-        date: new Date().toLocaleDateString('es-AR'),
-        settled: true,
-        groupId: debt.groupId || null
-      });
+      debt.settled = false; // Sigue pendiente para continuar saldando!
     }
+  }
+
+  saveState();
+  return true;
+}
+
+/**
+ * Salda un monto específico de una deuda.
+ */
+function settleDebtByAmount(debtId, amountToPay) {
+  const debt = appState.debts.find(d => d.id === debtId);
+  if (!debt || debt.settled) return false;
+
+  if (debt.originalAmount === undefined) debt.originalAmount = debt.amount;
+  if (!debt.partialPayments) debt.partialPayments = [];
+
+  const toPay = Math.min(debt.amount, Math.max(0.01, Number(amountToPay)));
+  const remaining = parseFloat((debt.amount - toPay).toFixed(2));
+  const pct = parseFloat(((toPay / debt.amount) * 100).toFixed(1));
+
+  debt.partialPayments.push({
+    date: new Date().toLocaleDateString('es-AR'),
+    amount: toPay,
+    percentage: pct
+  });
+
+  if (remaining <= 0.01) {
+    debt.amount = 0;
+    debt.settled = true;
+  } else {
+    debt.amount = remaining;
+    debt.settled = false; // Sigue pendiente para continuar saldando!
   }
 
   saveState();
@@ -137,29 +181,37 @@ function settleFriendBalancePartial(friendId, percentage) {
   const pct = Math.min(100, Math.max(1, Number(percentage)));
   const activeDebts = appState.debts.filter(d => !d.settled && d.friendId === friendId);
 
-  if (pct >= 100) {
-    activeDebts.forEach(d => { d.settled = true; });
-  } else {
-    activeDebts.forEach(d => {
-      const settledAmount = parseFloat((d.amount * (pct / 100)).toFixed(2));
-      const remainingAmount = parseFloat((d.amount - settledAmount).toFixed(2));
+  activeDebts.forEach(d => {
+    if (d.originalAmount === undefined) d.originalAmount = d.amount;
+    if (!d.partialPayments) d.partialPayments = [];
+
+    if (pct >= 100) {
+      d.partialPayments.push({
+        date: new Date().toLocaleDateString('es-AR'),
+        amount: d.amount,
+        percentage: 100
+      });
+      d.amount = 0;
+      d.settled = true;
+    } else {
+      const payAmount = parseFloat((d.amount * (pct / 100)).toFixed(2));
+      const remainingAmount = parseFloat((d.amount - payAmount).toFixed(2));
+
+      d.partialPayments.push({
+        date: new Date().toLocaleDateString('es-AR'),
+        amount: payAmount,
+        percentage: pct
+      });
+
       if (remainingAmount <= 0.01) {
+        d.amount = 0;
         d.settled = true;
       } else {
         d.amount = remainingAmount;
-        appState.debts.unshift({
-          id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          friendId: d.friendId,
-          direction: d.direction,
-          amount: settledAmount,
-          concept: `${d.concept} (Pago ${pct}%)`,
-          date: new Date().toLocaleDateString('es-AR'),
-          settled: true,
-          groupId: d.groupId || null
-        });
+        d.settled = false; // Sigue pendiente para continuar saldando!
       }
-    });
-  }
+    }
+  });
 
   saveState();
   return true;
